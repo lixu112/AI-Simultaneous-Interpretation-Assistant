@@ -4,11 +4,9 @@
 
 ## 视频演示
 
-**Demo视频链接**：请在录制视频后，将链接添加到此处
+**Demo视频链接**：
 
-例如：
-- Bilibili: https://www.bilibili.com/video/BVxxxxxx
-- YouTube: https://youtu.be/xxxxxx
+- Bilibili: https://www.bilibili.com/video/BV1Jy7U6EE72/?spm_id_from=333.1387.list.card_archive.click&vd_source=74c0ffe8568a078a976a9a55f1e7c498
 
 ## 功能特点
 
