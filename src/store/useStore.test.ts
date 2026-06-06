@@ -10,6 +10,8 @@ describe('useStore', () => {
         isPaused: false,
         currentSource: 'microphone',
         isSpeaking: false,
+        isTranslating: false,
+        translatingText: '',
         sourceLanguage: 'en-US',
         targetLanguage: 'zh-CN',
         currentOriginal: '',
@@ -72,6 +74,27 @@ describe('useStore', () => {
         useStore.getState().setPaused(true);
       });
       expect(useStore.getState().isPaused).toBe(true);
+    });
+  });
+
+  describe('翻译状态', () => {
+    it('应该正确设置翻译状态', () => {
+      act(() => {
+        useStore.getState().setTranslating(true, 'Hello world');
+      });
+      const state = useStore.getState();
+      expect(state.isTranslating).toBe(true);
+      expect(state.translatingText).toBe('Hello world');
+    });
+
+    it('应该正确关闭翻译状态', () => {
+      act(() => {
+        useStore.getState().setTranslating(true, 'Test');
+        useStore.getState().setTranslating(false);
+      });
+      const state = useStore.getState();
+      expect(state.isTranslating).toBe(false);
+      expect(state.translatingText).toBe('');
     });
   });
 

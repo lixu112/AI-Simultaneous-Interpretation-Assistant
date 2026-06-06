@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { useStore } from '@/store/useStore';
-import { Edit3, Check, X } from 'lucide-react';
+import { Edit3, Check, X, Loader2 } from 'lucide-react';
 import { addCorrectedTerm } from '@/hooks/useTranslation';
 
 export function CaptionDisplay() {
@@ -9,6 +9,8 @@ export function CaptionDisplay() {
     currentTranslation,
     isRecording,
     isPaused,
+    isTranslating,
+    translatingText,
     records,
     correctRecord,
   } = useStore();
@@ -176,8 +178,24 @@ export function CaptionDisplay() {
                   </div>
                 ))}
 
+              {/* Translating indicator */}
+              {isTranslating && translatingText && (
+                <div className="space-y-2 bg-primary/10 rounded-lg p-3 border border-primary/30">
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                    <span className="text-xs text-light-muted">正在翻译...</span>
+                  </div>
+                  <p className="text-light font-mono text-lg leading-relaxed">
+                    {translatingText}
+                  </p>
+                  <div className="h-1 bg-dark/50 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-primary to-accent-cyan animate-pulse" style={{ width: '100%' }} />
+                  </div>
+                </div>
+              )}
+
               {/* Current Captions (if being recognized) */}
-              {currentOriginal && (
+              {currentOriginal && !isTranslating && (
                 <div className="space-y-2">
                   {/* Current Original */}
                   <div>

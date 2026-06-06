@@ -53,6 +53,8 @@ interface AppState {
   isPaused: boolean;
   currentSource: AudioSource;
   isSpeaking: boolean;
+  isTranslating: boolean;
+  translatingText: string;
 
   // 语言
   sourceLanguage: string;
@@ -80,6 +82,7 @@ interface AppState {
   setRecording: (isRecording: boolean) => void;
   setPaused: (isPaused: boolean) => void;
   setSpeaking: (isSpeaking: boolean) => void;
+  setTranslating: (isTranslating: boolean, text?: string) => void;
   setCurrentCaption: (original: string, translated: string) => void;
   addRecord: (record: TranslationRecord) => void;
   correctRecord: (id: string, correction: Correction) => void;
@@ -93,6 +96,8 @@ const initialState = {
   isPaused: false,
   currentSource: 'microphone' as AudioSource,
   isSpeaking: false,
+  isTranslating: false,
+  translatingText: '',
   sourceLanguage: 'en-US',
   targetLanguage: 'zh-CN',
   currentOriginal: '',
@@ -125,6 +130,8 @@ export const useStore = create<AppState>()(
       setPaused: (isPaused) => set({ isPaused }),
 
       setSpeaking: (isSpeaking) => set({ isSpeaking }),
+
+      setTranslating: (isTranslating, text = '') => set({ isTranslating, translatingText: text }),
 
       setCurrentCaption: (original, translated) => set({ currentOriginal: original, currentTranslation: translated }),
 

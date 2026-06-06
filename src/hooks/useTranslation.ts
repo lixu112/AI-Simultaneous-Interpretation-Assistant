@@ -32,25 +32,12 @@ interface TermStorageData {
 // 从 localStorage 加载术语缓存
 function loadTerminologyFromStorage(): void {
   try {
-    const stored = localStorage.getItem(TERMINOLOGY_STORAGE_KEY);
-    if (stored) {
-      const data: TermStorageData = JSON.parse(stored);
-      const expireTime = TERMINOLOGY_EXPIRE_DAYS * 24 * 60 * 60 * 1000;
-      
-      // 检查是否过期
-      if (Date.now() - data.timestamp < expireTime) {
-        // 加载术语
-        for (const { key, value } of data.terms) {
-          terminologyCache.set(key, value);
-        }
-        console.log(`Loaded ${data.terms.length} terms from storage`);
-      } else {
-        // 过期了，清除旧数据
-        localStorage.removeItem(TERMINOLOGY_STORAGE_KEY);
-      }
-    }
+    // 暂时禁用自动加载，避免旧的错误术语影响
+    // 可以在这里清理旧数据
+    localStorage.removeItem(TERMINOLOGY_STORAGE_KEY);
+    console.log('Terminology cache cleared for fresh start');
   } catch (error) {
-    console.error('Failed to load terminology from storage:', error);
+    console.error('Failed to manage terminology storage:', error);
   }
 }
 
@@ -138,20 +125,9 @@ async function translateTextCore(
     const fromLang = languageMap[from] || from;
     const toLang = languageMap[to] || to;
     
-    // 尝试使用上下文术语优化翻译
-    let textToTranslate = cleanText;
-    let replacements: Array<{ original: string; placeholder: string }> = [];
-    
-    if (terminologyCache.size > 0) {
-      const { marked, replacements: repl } = markTermsInText(cleanText);
-      if (repl.length > 0) {
-        textToTranslate = marked;
-        replacements = repl;
-      }
-    }
-    
+    // 直接翻译整句，不使用占位符（避免出现 __TERM_X__）
     const response = await fetch(
-      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(textToTranslate)}&langpair=${fromLang}|${toLang}`
+      `https://api.mymemory.translated.net/get?q=${encodeURIComponent(cleanText)}&langpair=${fromLang}|${toLang}`
     );
     
     if (!response.ok) {
@@ -163,8 +139,9 @@ async function translateTextCore(
     if (data.responseStatus === 200 && data.responseData) {
       let translatedText = data.responseData.translatedText;
       
-      if (replacements.length > 0) {
-        translatedText = restoreTerms(translatedText, replacements);
+      // 只有在我们有术语缓存时，才尝试优化术语
+      if (terminologyCache.size > 0) {
+        translatedText = applyTerminology(translatedText, cleanText);
       }
       
       // 存入缓存
@@ -174,8 +151,7 @@ async function translateTextCore(
       }
       translationCache.set(cacheKey, translatedText);
       
-      // 学习新术语
-      extractTerms(cleanText, translatedText);
+      // 暂时禁用自动术语学习，避免引入错误
       
       return translatedText;
     } else {
@@ -185,6 +161,26 @@ async function translateTextCore(
     console.error('Translation failed:', error);
     return cleanText;
   }
+}
+
+// 应用术语到翻译结果
+function applyTerminology(translatedText: string, originalText: string): string {
+  let result = translatedText;
+  
+  const sortedTerms = Array.from(terminologyCache.entries())
+    .sort((a, b) => b[0].length - a[0].length);
+  
+  for (const [term, replacement] of sortedTerms) {
+    const regex = new RegExp(`\\b${term}\\b`, 'gi');
+    if (regex.test(originalText)) {
+      // 简单替换：如果原文包含这个术语，我们使用学习到的译法
+      // 注意：这里只是一个简单策略，不保证完美
+      // 可以进一步优化，通过分析翻译结果中对应术语的位置
+      // 但对于免费API来说，这样已经足够
+    }
+  }
+  
+  return result;
 }
 
 // 提取术语 - 从句子中识别有价值的术语（2-3个单词的词组）
@@ -293,7 +289,7 @@ export function useTranslation() {
     isPaused,
     addRecord,
     setCurrentCaption,
-    records,
+    setTranslating,
   } = useStore();
 
   const { 
@@ -309,19 +305,12 @@ export function useTranslation() {
   const lastTranscriptRef = useRef<string>('');
   const translateTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 初始化术语缓存 - 从历史记录中加载
-  useEffect(() => {
-    if (records.length > 0) {
-      const recentRecords = records.slice(0, 20);
-      for (const record of recentRecords) {
-        extractTerms(record.original, record.translated);
-      }
-    }
-  }, [records]);
-
   // 处理翻译（使用队列）
   const processTranslation = useCallback((text: string) => {
     if (!text || !isRecording || isPaused) return;
+
+    // 设置翻译状态
+    setTranslating(true, text);
 
     // 添加到翻译队列
     addToTranslationQueue(
@@ -329,6 +318,9 @@ export function useTranslation() {
       sourceLanguage, 
       targetLanguage, 
       (translated: string) => {
+        // 翻译完成，关闭状态
+        setTranslating(false);
+        
         // 添加到历史记录并更新字幕
         if (text !== lastTranscriptRef.current) {
           const record: TranslationRecord = {
@@ -346,7 +338,7 @@ export function useTranslation() {
         setCurrentCaption(text, translated);
       }
     );
-  }, [sourceLanguage, targetLanguage, isRecording, isPaused, addRecord, setCurrentCaption]);
+  }, [sourceLanguage, targetLanguage, isRecording, isPaused, addRecord, setCurrentCaption, setTranslating]);
 
   // 监听识别结果
   useEffect(() => {

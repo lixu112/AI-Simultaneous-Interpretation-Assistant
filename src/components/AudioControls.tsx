@@ -45,35 +45,6 @@ export function AudioControls() {
     }
   }, [micError, networkError]);
 
-  // 快捷键支持：Space键控制开始/暂停
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // 检查是否按下了Space键
-      if (event.code === 'Space' || event.key === ' ') {
-        // 防止在input/textarea等元素中触发
-        const target = event.target as HTMLElement;
-        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT') {
-          return;
-        }
-
-        event.preventDefault();
-        
-        if (!isRecording) {
-          // 未开始时，按Space开始翻译
-          handleStart();
-        } else {
-          // 已开始时，按Space暂停/继续
-          handlePause();
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isRecording, isPaused]);
-
   // 处理音频文件选择
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];

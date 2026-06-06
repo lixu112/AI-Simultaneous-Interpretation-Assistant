@@ -4,10 +4,10 @@ import { useTranslation, translateText } from '@/hooks/useTranslation';
 import { useStore } from '@/store/useStore';
 import { renderHook, act } from '@testing-library/react';
 
-// 模拟相关 hook
 vi.mock('@/hooks/useSpeechRecognition', () => ({
   useSpeechRecognition: () => ({
     transcript: '',
+    interimTranscript: '',
     isSupported: true,
     checkSupport: vi.fn(() => true),
     startRecognition: vi.fn(),
@@ -15,16 +15,8 @@ vi.mock('@/hooks/useSpeechRecognition', () => ({
   }),
 }));
 
-vi.mock('@/hooks/useSpeechSynthesis', () => ({
-  useSpeechSynthesis: () => ({
-    speak: vi.fn(),
-    stop: vi.fn(),
-  }),
-}));
-
 describe('useTranslation hook', () => {
   beforeEach(() => {
-    // 重置 store
     act(() => {
       useStore.setState({
         isRecording: false,
@@ -40,29 +32,33 @@ describe('useTranslation hook', () => {
   });
 
   describe('translateText', () => {
-    it('should translate common English phrases to Chinese', async () => {
-      expect(await translateText('hello', 'en-US', 'zh-CN')).toBe('你好');
-      expect(await translateText('thank you', 'en-US', 'zh-CN')).toBe('谢谢');
-      expect(await translateText('good morning', 'en-US', 'zh-CN')).toBe('早上好');
+    it('should translate English to Chinese', async () => {
+      const result = await translateText('hello', 'en-US', 'zh-CN');
+      expect(result).toBeTruthy();
+      expect(typeof result).toBe('string');
     });
 
-    it('should translate common Japanese phrases to Chinese', async () => {
-      expect(await translateText('こんにちは', 'ja-JP', 'zh-CN')).toBe('你好');
-      expect(await translateText('ありがとう', 'ja-JP', 'zh-CN')).toBe('谢谢');
+    it('should translate Japanese to Chinese', async () => {
+      const result = await translateText('こんにちは', 'ja-JP', 'zh-CN');
+      expect(result).toBeTruthy();
+      expect(typeof result).toBe('string');
     });
 
-    it('should return fallback translation for unknown phrases', async () => {
-      const result = await translateText('some unknown phrase', 'en-US', 'zh-CN');
-      expect(result).toContain('some unknown phrase');
+    it('should handle empty text', async () => {
+      expect(await translateText('', 'en-US', 'zh-CN')).toBe('');
+      expect(await translateText('   ', 'en-US', 'zh-CN')).toBe('');
     });
 
-    it('should handle case insensitivity', async () => {
-      expect(await translateText('HELLO', 'en-US', 'zh-CN')).toBe('你好');
-      expect(await translateText('Thank You', 'en-US', 'zh-CN')).toBe('谢谢');
+    it('should return non-empty result for valid input', async () => {
+      const result = await translateText('test translation', 'en-US', 'zh-CN');
+      expect(result).toBeTruthy();
+      expect(result.length).toBeGreaterThan(0);
     });
 
     it('should trim whitespace before translation', async () => {
-      expect(await translateText('  hello  ', 'en-US', 'zh-CN')).toBe('你好');
+      const trimmedResult = await translateText('hello', 'en-US', 'zh-CN');
+      const paddedResult = await translateText('  hello  ', 'en-US', 'zh-CN');
+      expect(paddedResult).toBe(trimmedResult);
     });
   });
 

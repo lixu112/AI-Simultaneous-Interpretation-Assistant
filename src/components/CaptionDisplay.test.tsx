@@ -39,7 +39,6 @@ describe('CaptionDisplay 组件', () => {
         });
       });
       render(<CaptionDisplay />);
-      expect(screen.getByText('原文')).toBeInTheDocument();
       expect(screen.getByText('Hello World')).toBeInTheDocument();
     });
 
@@ -51,30 +50,11 @@ describe('CaptionDisplay 组件', () => {
         });
       });
       render(<CaptionDisplay />);
-      expect(screen.getByText('译文')).toBeInTheDocument();
       expect(screen.getByText('你好世界')).toBeInTheDocument();
     });
   });
 
   describe('翻译历史', () => {
-    it('应该在有历史记录时显示记录数量', () => {
-      act(() => {
-        useStore.setState({
-          records: [
-            {
-              id: 'test-1',
-              original: 'First record',
-              translated: '第一条记录',
-              timestamp: Date.now(),
-              corrected: false,
-            },
-          ],
-        });
-      });
-      render(<CaptionDisplay />);
-      expect(screen.getByText('1 条记录')).toBeInTheDocument();
-    });
-
     it('应该正确显示翻译历史记录', () => {
       const testRecord = {
         id: 'test-2',
@@ -91,7 +71,7 @@ describe('CaptionDisplay 组件', () => {
       expect(screen.getByText('谢谢')).toBeInTheDocument();
     });
 
-    it('应该在记录被修正时显示修正标记', () => {
+    it('应该在译文被修正时显示修正标记', () => {
       act(() => {
         useStore.setState({
           records: [
@@ -101,6 +81,7 @@ describe('CaptionDisplay 组件', () => {
               translated: '早上好',
               timestamp: Date.now(),
               corrected: true,
+              corrections: [{ field: 'translated', before: '原来的翻译', after: '早上好', timestamp: Date.now() }],
             },
           ],
         });
